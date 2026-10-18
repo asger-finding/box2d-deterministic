@@ -714,7 +714,7 @@ Box2D.postDefs = [];
       var t2 = 0;
       var t3 = 0;
       var s = 0; {
-         if (absDX < Number.MIN_VALUE) {
+         if (absDX < b2Settings.b2_epsilon) {
             if (pX < this.lowerBound.x || this.upperBound.x < pX) return false;
          }
          else {
@@ -737,7 +737,7 @@ Box2D.postDefs = [];
             if (tmin > tmax) return false;
          }
       } {
-         if (absDY < Number.MIN_VALUE) {
+         if (absDY < b2Settings.b2_epsilon) {
             if (pY < this.lowerBound.y || this.upperBound.y < pY) return false;
          }
          else {
@@ -1040,7 +1040,7 @@ Box2D.postDefs = [];
       var localTangentX = local_v12.x - local_v11.x;
       var localTangentY = local_v12.y - local_v11.y;
       var localTangentLength = Math.sqrt(localTangentX * localTangentX + localTangentY * localTangentY);
-      if (!(localTangentLength < Number.MIN_VALUE)) {
+      if (!(localTangentLength < b2Settings.b2_epsilon)) {
          var invLength = 1.0 / localTangentLength;
          localTangentX *= invLength;
          localTangentY *= invLength;
@@ -1155,7 +1155,7 @@ Box2D.postDefs = [];
       var vertIndex2 = vertIndex1 + 1 < vertexCount ? vertIndex1 + 1 : 0;
       var v1 = vertices[vertIndex1];
       var v2 = vertices[vertIndex2];
-      if (separation < Number.MIN_VALUE) {
+      if (separation < b2Settings.b2_epsilon) {
          manifold.m_pointCount = 1;
          manifold.m_type = b2Manifold.e_faceA;
          manifold.m_localPlaneNormal.SetV(normals[vertIndex1]);
@@ -1329,7 +1329,7 @@ Box2D.postDefs = [];
                dY = (-1.0 * e12X);
             }
          }
-         if (dX * dX + dY * dY < Number.MIN_VALUE * Number.MIN_VALUE) {
+         if (dX * dX + dY * dY < b2Settings.b2_epsilon * b2Settings.b2_epsilon) {
             break;
          }
          var vertex = vertices[simplex.m_count];
@@ -1379,7 +1379,7 @@ Box2D.postDefs = [];
       if (input.useRadii) {
          var rA = proxyA.m_radius;
          var rB = proxyB.m_radius;
-         if (output.distance > rA + rB && output.distance > Number.MIN_VALUE) {
+         if (output.distance > rA + rB && output.distance > b2Settings.b2_epsilon) {
             output.distance -= rA + rB;
             var normal = b2Distance.s_normal;
             normal.Set(output.pointB.x - output.pointA.x, output.pointB.y - output.pointA.y);
@@ -1554,7 +1554,7 @@ Box2D.postDefs = [];
       var rX = p1.x - p2.x;
       var rY = p1.y - p2.y;
       var rLength = Math.sqrt(rX * rX + rY * rY);
-      if (!(rLength < Number.MIN_VALUE)) {
+      if (!(rLength < b2Settings.b2_epsilon)) {
          var invLength = 1.0 / rLength;
          rX *= invLength;
          rY *= invLength;
@@ -1934,7 +1934,7 @@ Box2D.postDefs = [];
       var dY = this.p2.y - this.p1.y;
       var nX = dY;
       var nY = (-dX);
-      var k_slop = 100.0 * Number.MIN_VALUE;
+      var k_slop = 100.0 * b2Settings.b2_epsilon;
       var denom = (-(rX * nX + rY * nY));
       if (denom > k_slop) {
          var bX = s.x - this.p1.x;
@@ -2257,7 +2257,7 @@ Box2D.postDefs = [];
       if (count > 1) {
          var metric1 = cache.metric;
          var metric2 = this.GetMetric();
-         if (metric2 < .5 * metric1 || 2.0 * metric1 < metric2 || metric2 < Number.MIN_VALUE) {
+         if (metric2 < .5 * metric1 || 2.0 * metric1 < metric2 || metric2 < b2Settings.b2_epsilon) {
             this.m_count = 0;
          }
       }
@@ -2491,7 +2491,7 @@ Box2D.postDefs = [];
       var sweepA = input.sweepA;
       var sweepB = input.sweepB;
       b2Settings.b2Assert(sweepA.t0 == sweepB.t0);
-      b2Settings.b2Assert(1.0 - sweepA.t0 > Number.MIN_VALUE);
+      b2Settings.b2Assert(1.0 - sweepA.t0 > b2Settings.b2_epsilon);
       var radius = proxyA.m_radius + proxyB.m_radius;
       var tolerance = input.tolerance;
       var alpha = 0.0;
@@ -2592,7 +2592,7 @@ Box2D.postDefs = [];
             }
             b2TimeOfImpact.b2_toiMaxRootIters = b2Math.Max(b2TimeOfImpact.b2_toiMaxRootIters, rootIterCount);
          }
-         if (newAlpha < (1.0 + 100.0 * Number.MIN_VALUE) * alpha) {
+         if (newAlpha < (1.0 + 100.0 * b2Settings.b2_epsilon) * alpha) {
             break;
          }
          alpha = newAlpha;
@@ -2670,7 +2670,7 @@ Box2D.postDefs = [];
             var dX = pointBX - pointAX;
             var dY = pointBY - pointAY;
             var d2 = dX * dX + dY * dY;
-            if (d2 > Number.MIN_VALUE * Number.MIN_VALUE) {
+            if (d2 > b2Settings.b2_epsilon * b2Settings.b2_epsilon) {
                var d = Math.sqrt(d2);
                normalX = dX / d;
                normalY = dY / d;
@@ -2870,7 +2870,7 @@ Box2D.postDefs = [];
       var c = (sX * rX + sY * rY);
       var rr = (rX * rX + rY * rY);
       var sigma = c * c - rr * b;
-      if (sigma < 0.0 || rr < Number.MIN_VALUE) {
+      if (sigma < 0.0 || rr < b2Settings.b2_epsilon) {
          return false;
       }
       var a = (-(c + Math.sqrt(sigma)));
@@ -2967,7 +2967,7 @@ Box2D.postDefs = [];
       var v1Y = transform.position.y + (tMat.col1.y * this.m_v1.x + tMat.col2.y * this.m_v1.y);
       var nX = transform.position.y + (tMat.col1.y * this.m_v2.x + tMat.col2.y * this.m_v2.y) - v1Y;
       var nY = (-(transform.position.x + (tMat.col1.x * this.m_v2.x + tMat.col2.x * this.m_v2.y) - v1X));
-      var k_slop = 100.0 * Number.MIN_VALUE;
+      var k_slop = 100.0 * b2Settings.b2_epsilon;
       var denom = (-(rX * nX + rY * nY));
       if (denom > k_slop) {
          var bX = input.p1.x - v1X;
@@ -3193,7 +3193,7 @@ Box2D.postDefs = [];
          var i1 = i;
          var i2 = i + 1 < this.m_vertexCount ? i + 1 : 0;
          var edge = b2Math.SubtractVV(this.m_vertices[i2], this.m_vertices[i1]);
-         b2Settings.b2Assert(edge.LengthSquared() > Number.MIN_VALUE);
+         b2Settings.b2Assert(edge.LengthSquared() > b2Settings.b2_epsilon * b2Settings.b2_epsilon);
          this.m_normals[i].SetV(b2Math.CrossVF(edge, 1.0));
          this.m_normals[i].Normalize();
       }
@@ -3337,7 +3337,7 @@ Box2D.postDefs = [];
                upper = numerator / denominator;
             }
          }
-         if (upper < lower - Number.MIN_VALUE) {
+         if (upper < lower - b2Settings.b2_epsilon) {
             return false;
          }
       }
@@ -3652,7 +3652,7 @@ Box2D.postDefs = [];
       simplexCache.count = 0;
       var output = b2Shape.s_output;
       b2Distance.Distance(output, simplexCache, input);
-      return output.distance < 10.0 * Number.MIN_VALUE;
+      return output.distance < 10.0 * b2Settings.b2_epsilon;
    }
    b2Shape.prototype.b2Shape = function () {
       this.m_type = b2Shape.e_unknownShape;
@@ -3754,6 +3754,7 @@ Box2D.postDefs = [];
       Box2D.Common.b2Settings.b2_maxManifoldPoints = 2;
       Box2D.Common.b2Settings.b2_aabbExtension = 0.1;
       Box2D.Common.b2Settings.b2_aabbMultiplier = 2.0;
+      Box2D.Common.b2Settings.b2_epsilon = 1.1920928955078125e-7;
       Box2D.Common.b2Settings.b2_linearSlop = 0.005;
       Box2D.Common.b2Settings.b2_polygonRadius = 2.0 * b2Settings.b2_linearSlop;
       Box2D.Common.b2Settings.b2_angularSlop = 2.0 / 180.0 * b2Settings.b2_pi;
@@ -3774,7 +3775,8 @@ Box2D.postDefs = [];
    });
 })();
 (function () {
-   var b2Mat22 = Box2D.Common.Math.b2Mat22,
+   var b2Settings = Box2D.Common.b2Settings,
+      b2Mat22 = Box2D.Common.Math.b2Mat22,
       b2Mat33 = Box2D.Common.Math.b2Mat33,
       b2Math = Box2D.Common.Math.b2Math,
       b2Sweep = Box2D.Common.Math.b2Sweep,
@@ -4701,7 +4703,7 @@ Box2D.postDefs = [];
    }
    b2Sweep.prototype.Advance = function (t) {
       if (t === undefined) t = 0;
-      if (this.t0 < t && 1.0 - this.t0 > Number.MIN_VALUE) {
+      if (this.t0 < t && 1.0 - this.t0 > b2Settings.b2_epsilon) {
          var alpha = (t - this.t0) / (1.0 - this.t0);
          var oneMinusAlpha = 1.0 - alpha;
          this.c0.x = oneMinusAlpha * this.c0.x + alpha * this.c.x;
@@ -4828,7 +4830,7 @@ Box2D.postDefs = [];
    }
    b2Vec2.prototype.Normalize = function () {
       var length = Math.sqrt(this.x * this.x + this.y * this.y);
-      if (length < Number.MIN_VALUE) {
+      if (length < b2Settings.b2_epsilon) {
          return 0.0;
       }
       var invLength = 1.0 / length;
@@ -6929,12 +6931,12 @@ Box2D.postDefs = [];
                c.m_toi = toi;
                c.m_flags |= b2Contact.e_toiFlag;
             }
-            if (Number.MIN_VALUE < toi && toi < minTOI) {
+            if (b2Settings.b2_epsilon < toi && toi < minTOI) {
                minContact = c;
                minTOI = toi;
             }
          }
-         if (minContact == null || 1.0 - 100.0 * Number.MIN_VALUE < minTOI) {
+         if (minContact == null || 1.0 - 100.0 * b2Settings.b2_epsilon < minTOI) {
             break;
          }
          fA = minContact.m_fixtureA;
@@ -8068,7 +8070,7 @@ Box2D.postDefs = [];
             var dX = pointBX - pointAX;
             var dY = pointBY - pointAY;
             var d2 = dX * dX + dY * dY;
-            if (d2 > Number.MIN_VALUE * Number.MIN_VALUE) {
+            if (d2 > b2Settings.b2_epsilon * b2Settings.b2_epsilon) {
                var d = Math.sqrt(d2);
                normalX = dX / d;
                normalY = dY / d;
@@ -9374,7 +9376,7 @@ Box2D.postDefs = [];
          this.m_a1 = (dX + r1X) * this.m_axis.y - (dY + r1Y) * this.m_axis.x;
          this.m_a2 = r2X * this.m_axis.y - r2Y * this.m_axis.x;
          this.m_motorMass = this.m_invMassA + this.m_invMassB + this.m_invIA * this.m_a1 * this.m_a1 + this.m_invIB * this.m_a2 * this.m_a2;
-         this.m_motorMass = this.m_motorMass > Number.MIN_VALUE ? 1.0 / this.m_motorMass : 0.0;
+         this.m_motorMass = this.m_motorMass > b2Settings.b2_epsilon ? 1.0 / this.m_motorMass : 0.0;
       } {
          tVec = this.m_localYAxis1;
          this.m_perp.x = tMat.col1.x * tVec.x + tMat.col2.x * tVec.y;
@@ -10002,7 +10004,7 @@ Box2D.postDefs = [];
          this.m_a1 = (dX + r1X) * this.m_axis.y - (dY + r1Y) * this.m_axis.x;
          this.m_a2 = r2X * this.m_axis.y - r2Y * this.m_axis.x;
          this.m_motorMass = this.m_invMassA + this.m_invMassB + this.m_invIA * this.m_a1 * this.m_a1 + this.m_invIB * this.m_a2 * this.m_a2;
-         if (this.m_motorMass > Number.MIN_VALUE) this.m_motorMass = 1.0 / this.m_motorMass;
+         if (this.m_motorMass > b2Settings.b2_epsilon) this.m_motorMass = 1.0 / this.m_motorMass;
       } {
          tVec = this.m_localYAxis1;
          this.m_perp.x = tMat.col1.x * tVec.x + tMat.col2.x * tVec.y;
