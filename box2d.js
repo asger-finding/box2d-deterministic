@@ -3687,8 +3687,8 @@ Box2D.postDefs = [];
       Box2D.Common.b2Settings.b2_maxManifoldPoints = 2;
       Box2D.Common.b2Settings.b2_aabbExtension = 0.1;
       Box2D.Common.b2Settings.b2_aabbMultiplier = 2.0;
-      Box2D.Common.b2Settings.b2_polygonRadius = 2.0 * b2Settings.b2_linearSlop;
       Box2D.Common.b2Settings.b2_linearSlop = 0.005;
+      Box2D.Common.b2Settings.b2_polygonRadius = 2.0 * b2Settings.b2_linearSlop;
       Box2D.Common.b2Settings.b2_angularSlop = 2.0 / 180.0 * b2Settings.b2_pi;
       Box2D.Common.b2Settings.b2_toiSlop = 8.0 * b2Settings.b2_linearSlop;
       Box2D.Common.b2Settings.b2_maxTOIContactsPerIsland = 32;
@@ -3739,8 +3739,8 @@ Box2D.postDefs = [];
    }
    b2Mat22.prototype.Set = function (angle) {
       if (angle === undefined) angle = 0;
-      var c = Math.cos(angle);
-      var s = Math.sin(angle);
+      var c = b2Math.Cos(angle);
+      var s = b2Math.Sin(angle);
       this.col1.x = c;
       this.col2.x = (-s);
       this.col1.y = s;
@@ -4064,10 +4064,108 @@ Box2D.postDefs = [];
       var result = x > 0 && (x & (x - 1)) == 0;
       return result;
    }
+   /*
+   * JavaScript ports of fdlibm's sin and cos to secure browser engine parity.
+   *
+   * ====================================================
+   * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+   *
+   * Developed at SunSoft, a Sun Microsystems, Inc. business.
+   * Permission to use, copy, modify, and distribute this
+   * software is freely granted, provided that this notice
+   * is preserved.
+   * ====================================================
+   */
+   b2Math.Sin = function (x) {
+      if (x === undefined) x = 0;
+      if (Math.abs(x) < 1.4901161193847656e-8) return x;
+      if (Math.abs(x) < 0.7853984832763672) return b2Math.SinKernel(x, 0.0, false);
+      var reduction = b2Math.s_reduction;
+      switch (b2Math.ReduceAngle(x, reduction) & 3) {
+      case 0:
+         return b2Math.SinKernel(reduction[0], reduction[1], true);
+      case 1:
+         return b2Math.CosKernel(reduction[0], reduction[1]);
+      case 2:
+         return (-b2Math.SinKernel(reduction[0], reduction[1], true));
+      default:
+         return (-b2Math.CosKernel(reduction[0], reduction[1]));
+      }
+   }
+   b2Math.Cos = function (x) {
+      if (x === undefined) x = 0;
+      if (Math.abs(x) < 0.7853984832763672) return b2Math.CosKernel(x, 0.0);
+      var reduction = b2Math.s_reduction;
+      switch (b2Math.ReduceAngle(x, reduction) & 3) {
+      case 0:
+         return b2Math.CosKernel(reduction[0], reduction[1]);
+      case 1:
+         return (-b2Math.SinKernel(reduction[0], reduction[1], true));
+      case 2:
+         return (-b2Math.CosKernel(reduction[0], reduction[1]));
+      default:
+         return b2Math.SinKernel(reduction[0], reduction[1], true);
+      }
+   }
+   b2Math.ReduceAngle = function (x, reduction) {
+      if (x === undefined) x = 0;
+      var k_invPio2 = 0.6366197723675814;
+      var k_pio2Part1 = 1.5707963267341256;
+      var k_pio2Part2 = 6.077100506303966e-11;
+      var k_pio2Tail2 = 2.0222662487959506e-21;
+      var k_pio2Part3 = 2.0222662487111665e-21;
+      var k_pio2Tail3 = 8.4784276603689e-32;
+      var n = Math.round(x * k_invPio2);
+      var r = x - n * k_pio2Part1;
+      var t = r;
+      var w = n * k_pio2Part2;
+      r = t - w;
+      w = n * k_pio2Tail2 - ((t - r) - w);
+      t = r;
+      w = n * k_pio2Part3;
+      r = t - w;
+      w = n * k_pio2Tail3 - ((t - r) - w);
+      reduction[0] = r - w;
+      reduction[1] = (r - reduction[0]) - w;
+      return n;
+   }
+   b2Math.SinKernel = function (x, tail, hasTail) {
+      if (x === undefined) x = 0;
+      if (tail === undefined) tail = 0;
+      var k_sin1 = (-0.16666666666666632);
+      var k_sin2 = 0.00833333333332249;
+      var k_sin3 = (-0.0001984126982985795);
+      var k_sin4 = 0.0000027557313707070068;
+      var k_sin5 = (-2.5050760253406863e-8);
+      var k_sin6 = 1.58969099521155e-10;
+      var z = x * x;
+      var w = z * z;
+      var r = k_sin2 + z * (k_sin3 + z * k_sin4) + z * w * (k_sin5 + z * k_sin6);
+      var v = z * x;
+      if (!hasTail) return x + v * (k_sin1 + z * r);
+      return x - ((z * (0.5 * tail - v * r) - tail) - v * k_sin1);
+   }
+   b2Math.CosKernel = function (x, tail) {
+      if (x === undefined) x = 0;
+      if (tail === undefined) tail = 0;
+      var k_cos1 = 0.0416666666666666;
+      var k_cos2 = (-0.001388888888887411);
+      var k_cos3 = 0.00002480158728947673;
+      var k_cos4 = (-2.7557314351390663e-7);
+      var k_cos5 = 2.087572321298175e-9;
+      var k_cos6 = (-1.1359647557788195e-11);
+      var z = x * x;
+      var w = z * z;
+      var r = z * (k_cos1 + z * (k_cos2 + z * k_cos3)) + w * w * (k_cos4 + z * (k_cos5 + z * k_cos6));
+      var hz = 0.5 * z;
+      w = 1.0 - hz;
+      return w + (((1.0 - w) - hz) + (z * r - x * tail));
+   }
    Box2D.postDefs.push(function () {
       Box2D.Common.Math.b2Math.b2Vec2_zero = new b2Vec2(0.0, 0.0);
       Box2D.Common.Math.b2Math.b2Mat22_identity = b2Mat22.FromVV(new b2Vec2(1.0, 0.0), new b2Vec2(0.0, 1.0));
       Box2D.Common.Math.b2Math.b2Transform_identity = new b2Transform(b2Math.b2Vec2_zero, b2Math.b2Mat22_identity);
+      Box2D.Common.Math.b2Math.s_reduction = [0.0, 0.0];
    });
    b2Sweep.b2Sweep = function () {
       this.localCenter = new b2Vec2();
@@ -5175,7 +5273,7 @@ Box2D.postDefs = [];
          bodyB.m_contactList = c.m_nodeB.next;
       }
       this.m_contactFactory.Destroy(c);
-      --this.m_contactCount;
+      --this.m_world.m_contactCount;
    }
    b2ContactManager.prototype.Collide = function () {
       var c = this.m_world.m_contactList;
@@ -5317,7 +5415,7 @@ Box2D.postDefs = [];
    }
    b2Fixture.prototype.SetFilterData = function (filter) {
       this.m_filter = filter.Copy();
-      if (this.m_body) return;
+      if (!this.m_body) return;
       var edge = this.m_body.GetContactList();
       while (edge) {
          var contact = edge.contact;
@@ -5591,6 +5689,7 @@ Box2D.postDefs = [];
       var j = 0;
       this.m_contactSolver.Initialize(subStep, this.m_contacts, this.m_contactCount, this.m_allocator);
       var contactSolver = this.m_contactSolver;
+      contactSolver.InitVelocityConstraints(subStep);
       for (i = 0;
       i < this.m_jointCount; ++i) {
          this.m_joints[i].InitVelocityConstraints(subStep);
