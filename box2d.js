@@ -2839,8 +2839,8 @@ Box2D.postDefs = [];
       }
       var r2 = this.m_radius * this.m_radius;
       var l2 = l * l;
-      var area = r2 * (Math.asin(l / this.m_radius) + Math.PI / 2) + l * Math.sqrt(r2 - l2);
-      var com = (-2 / 3 * Math.pow(r2 - l2, 1.5) / area);
+      var area = r2 * (b2Math.Atan2(l, Math.sqrt(r2 - l2)) + Math.PI / 2) + l * Math.sqrt(r2 - l2);
+      var com = (-2 / 3 * ((r2 - l2) * Math.sqrt(r2 - l2)) / area);
       c.x = p.x + normal.x * com;
       c.y = p.y + normal.y * com;
       return area;
@@ -4633,8 +4633,8 @@ Box2D.postDefs = [];
    };
    b2Body.prototype.connectEdges = function (s1, s2, angle1) {
       if (angle1 === undefined) angle1 = 0;
-      var angle2 = Math.atan2(s2.GetDirectionVector().y, s2.GetDirectionVector().x);
-      var coreOffset = Math.tan((angle2 - angle1) * 0.5);
+      var angle2 = b2Math.Atan2(s2.GetDirectionVector().y, s2.GetDirectionVector().x);
+      var coreOffset = b2Math.Sin((angle2 - angle1) * 0.5) / b2Math.Cos((angle2 - angle1) * 0.5);
       var core = b2Math.MulFV(coreOffset, s2.GetDirectionVector());
       core = b2Math.SubtractVV(core, s2.GetNormalVector());
       core = b2Math.MulFV(b2Settings.b2_toiSlop, core);
