@@ -4080,6 +4080,7 @@ Box2D.postDefs = [];
       if (x === undefined) x = 0;
       if (Math.abs(x) < 1.4901161193847656e-8) return x;
       if (Math.abs(x) < 0.7853984832763672) return b2Math.SinKernel(x, 0.0, false);
+      if (Math.abs(x) >= 1647099) return Math.sin(x);
       var reduction = b2Math.s_reduction;
       switch (b2Math.ReduceAngle(x, reduction) & 3) {
       case 0:
@@ -4095,6 +4096,7 @@ Box2D.postDefs = [];
    b2Math.Cos = function (x) {
       if (x === undefined) x = 0;
       if (Math.abs(x) < 0.7853984832763672) return b2Math.CosKernel(x, 0.0);
+      if (Math.abs(x) >= 1647099) return Math.cos(x);
       var reduction = b2Math.s_reduction;
       switch (b2Math.ReduceAngle(x, reduction) & 3) {
       case 0:
