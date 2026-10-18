@@ -1,0 +1,35 @@
+{
+  "name": "@asger-finding/box2d-v2",
+  "version": "2.1.0",
+  "description": "Box2DWeb 2.1a.3 as an ES module, with its port bugs fixed for deterministic simulation.",
+  "type": "module",
+  "exports": {
+    ".": "./box2d.js"
+  },
+  "files": [
+    "box2d.js"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asger-finding/Box2D-v2.git"
+  },
+  "keywords": [
+    "box2d",
+    "box2dweb",
+    "physics",
+    "deterministic"
+  ],
+  "author": "Asger Finding",
+  "contributors": [
+    "Erin Catto",
+    "Uli Hecht"
+  ],
+  "license": "Zlib",
+  "bugs": {
+    "url": "https://github.com/asger-finding/Box2D-v2/issues"
+  },
+  "homepage": "https://github.com/asger-finding/Box2D-v2#readme"
+}
