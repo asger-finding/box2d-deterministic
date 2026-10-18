@@ -4080,7 +4080,7 @@ Box2D.postDefs = [];
       if (x === undefined) x = 0;
       if (Math.abs(x) < 1.4901161193847656e-8) return x;
       if (Math.abs(x) < 0.7853984832763672) return b2Math.SinKernel(x, 0.0, false);
-      if (Math.abs(x) >= 1647099) return Math.sin(x);
+      if (!b2Math.IsValid(x)) return x - x;
       var reduction = b2Math.s_reduction;
       switch (b2Math.ReduceAngle(x, reduction) & 3) {
       case 0:
@@ -4096,7 +4096,7 @@ Box2D.postDefs = [];
    b2Math.Cos = function (x) {
       if (x === undefined) x = 0;
       if (Math.abs(x) < 0.7853984832763672) return b2Math.CosKernel(x, 0.0);
-      if (Math.abs(x) >= 1647099) return Math.cos(x);
+      if (!b2Math.IsValid(x)) return x - x;
       var reduction = b2Math.s_reduction;
       switch (b2Math.ReduceAngle(x, reduction) & 3) {
       case 0:
@@ -4113,23 +4113,264 @@ Box2D.postDefs = [];
       if (x === undefined) x = 0;
       var k_invPio2 = 0.6366197723675814;
       var k_pio2Part1 = 1.5707963267341256;
+      var k_pio2Tail1 = 6.077100506506192e-11;
       var k_pio2Part2 = 6.077100506303966e-11;
       var k_pio2Tail2 = 2.0222662487959506e-21;
       var k_pio2Part3 = 2.0222662487111665e-21;
       var k_pio2Tail3 = 8.4784276603689e-32;
-      var n = Math.round(x * k_invPio2);
+      var k_roundingShift = 6755399441055744.0;
+      var high = b2Math.HighWord(x);
+      var absHigh = high & 0x7FFFFFFF;
+      var n = 0;
+      var z = 0.0;
+      if (absHigh <= 0x401C463B) {
+         if (absHigh <= 0x400F6A7A) {
+            if ((absHigh & 0xFFFFF) != 0x921FB) n = absHigh <= 0x4002D97C ? 1 : 2;
+         }
+         else if (absHigh <= 0x4015FDBC) {
+            if (absHigh != 0x4012D97C) n = 3;
+         }
+         else if (absHigh != 0x401921FB) {
+            n = 4;
+         }
+         if (n != 0) {
+            if (high > 0) {
+               z = x - n * k_pio2Part1;
+               reduction[0] = z - n * k_pio2Tail1;
+               reduction[1] = (z - reduction[0]) - n * k_pio2Tail1;
+               return n;
+            }
+            z = x + n * k_pio2Part1;
+            reduction[0] = z + n * k_pio2Tail1;
+            reduction[1] = (z - reduction[0]) + n * k_pio2Tail1;
+            return (-n);
+         }
+      }
+      if (absHigh >= 0x413921FB) return b2Math.ReduceLargeAngle(x, reduction);
+      n = (x * k_invPio2 + k_roundingShift) - k_roundingShift;
+      var exponent = absHigh >> 20;
       var r = x - n * k_pio2Part1;
-      var t = r;
-      var w = n * k_pio2Part2;
-      r = t - w;
-      w = n * k_pio2Tail2 - ((t - r) - w);
-      t = r;
-      w = n * k_pio2Part3;
-      r = t - w;
-      w = n * k_pio2Tail3 - ((t - r) - w);
+      var w = n * k_pio2Tail1;
+      var t = 0.0;
       reduction[0] = r - w;
+      if (exponent - ((b2Math.HighWord(reduction[0]) >> 20) & 0x7FF) > 16) {
+         t = r;
+         w = n * k_pio2Part2;
+         r = t - w;
+         w = n * k_pio2Tail2 - ((t - r) - w);
+         reduction[0] = r - w;
+         if (exponent - ((b2Math.HighWord(reduction[0]) >> 20) & 0x7FF) > 49) {
+            t = r;
+            w = n * k_pio2Part3;
+            r = t - w;
+            w = n * k_pio2Tail3 - ((t - r) - w);
+            reduction[0] = r - w;
+         }
+      }
       reduction[1] = (r - reduction[0]) - w;
       return n;
+   }
+   b2Math.ReduceLargeAngle = function (x, reduction) {
+      if (x === undefined) x = 0;
+      var k_two24 = 16777216.0;
+      var chunks = new Vector_a2j_Number(3);
+      var exponent = ((b2Math.HighWord(x) & 0x7FFFFFFF) >> 20) - 1046;
+      var z = Math.abs(x) * b2Math.PowerOfTwo((-exponent));
+      chunks[0] = Math.floor(z);
+      z = (z - chunks[0]) * k_two24;
+      chunks[1] = Math.floor(z);
+      chunks[2] = (z - chunks[1]) * k_two24;
+      var chunkCount = 3;
+      while (chunks[chunkCount - 1] == 0.0) {
+         --chunkCount;
+      }
+      var n = b2Math.ReduceLargeAngleKernel(chunks, chunkCount, exponent, reduction);
+      if (x < 0.0) {
+         reduction[0] = (-reduction[0]);
+         reduction[1] = (-reduction[1]);
+         return (-n);
+      }
+      return n;
+   }
+   b2Math.ReduceLargeAngleKernel = function (chunks, chunkCount, exponent, reduction) {
+      if (chunkCount === undefined) chunkCount = 0;
+      if (exponent === undefined) exponent = 0;
+      var k_twoOverPi = [
+         0xA2F983, 0x6E4E44, 0x1529FC, 0x2757D1, 0xF534DD, 0xC0DB62,
+         0x95993C, 0x439041, 0xFE5163, 0xABDEBB, 0xC561B7, 0x246E3A,
+         0x424DD2, 0xE00649, 0x2EEA09, 0xD1921C, 0xFE1DEB, 0x1CB129,
+         0xA73EE8, 0x8235F5, 0x2EBB44, 0x84E99C, 0x7026B4, 0x5F7E41,
+         0x3991D6, 0x398353, 0x39F49C, 0x845F8B, 0xBDF928, 0x3B1FF8,
+         0x97FFDE, 0x05980F, 0xEF2F11, 0x8B5A0A, 0x6D1F6D, 0x367ECF,
+         0x27CB09, 0xB74F46, 0x3F669E, 0x5FEA2D, 0x7527BA, 0xC7EBE5,
+         0xF17B3D, 0x0739F7, 0x8A5292, 0xEA6BFB, 0x5FB11F, 0x8D5D08,
+         0x560330, 0x46FC7B, 0x6BABF0, 0xCFBC20, 0x9AF436, 0x1DA9E3,
+         0x91615E, 0xE61B08, 0x659985, 0x5F14A0, 0x68408D, 0xFFD880,
+         0x4D7327, 0x310606, 0x1556CA, 0x73A8C9, 0x60E27B, 0xC08C6B
+      ];
+      var k_pio2 = [1.570796251296997, 7.549789415861596e-8, 5.390302529957765e-15, 3.282003415807913e-22, 1.270655753080676e-29, 1.2293330898111133e-36, 2.7337005381646456e-44, 2.1674168387780482e-51];
+      var k_two24 = 16777216.0;
+      var k_twoNegative24 = 5.960464477539063e-8;
+      var k_initialTerms = 4;
+      var i = 0;
+      var j = 0;
+      var k = 0;
+      var n = 0;
+      var half = 0;
+      var carry = 0;
+      var sum = 0.0;
+      var high = 0.0;
+      var power = 0.0;
+      var z = 0.0;
+      var terms = new Vector_a2j_Number(20);
+      var products = new Vector_a2j_Number(20);
+      var piProducts = new Vector_a2j_Number(20);
+      var productChunks = new Vector_a2j_Number(20);
+      var lastChunk = chunkCount - 1;
+      var lastProduct = k_initialTerms;
+      var tableStart = Math.floor((exponent - 3) / 24);
+      if (tableStart < 0) tableStart = 0;
+      var scale = exponent - 24 * (tableStart + 1);
+      for (i = 0;
+      i <= lastChunk + k_initialTerms; ++i) {
+         j = tableStart - lastChunk + i;
+         terms[i] = j < 0 ? 0.0 : k_twoOverPi[j];
+      }
+      for (i = 0;
+      i <= k_initialTerms; ++i) {
+         sum = 0.0;
+         for (j = 0;
+         j <= lastChunk; ++j) {
+            sum += chunks[j] * terms[lastChunk + i - j];
+         }
+         products[i] = sum;
+      }
+      for (;;) {
+         z = products[lastProduct];
+         for (i = 0;
+         i < lastProduct; ++i) {
+            high = Math.floor(k_twoNegative24 * z);
+            productChunks[i] = Math.floor(z - k_two24 * high);
+            z = products[lastProduct - i - 1] + high;
+         }
+         z *= b2Math.PowerOfTwo(scale);
+         z -= 8.0 * Math.floor(z * 0.125);
+         n = Math.floor(z);
+         z -= n;
+         half = 0;
+         if (scale > 0) {
+            i = productChunks[lastProduct - 1] >> (24 - scale);
+            n += i;
+            productChunks[lastProduct - 1] -= i << (24 - scale);
+            half = productChunks[lastProduct - 1] >> (23 - scale);
+         }
+         else if (scale == 0) {
+            half = productChunks[lastProduct - 1] >> 23;
+         }
+         else if (z >= 0.5) {
+            half = 2;
+         }
+         if (half > 0) {
+            n += 1;
+            carry = 0;
+            for (i = 0;
+            i < lastProduct; ++i) {
+               j = productChunks[i];
+               if (carry == 0) {
+                  if (j != 0) {
+                     carry = 1;
+                     productChunks[i] = 0x1000000 - j;
+                  }
+               }
+               else {
+                  productChunks[i] = 0xFFFFFF - j;
+               }
+            }
+            switch (scale) {
+            case 1:
+               productChunks[lastProduct - 1] &= 0x7FFFFF;
+               break;
+            case 2:
+               productChunks[lastProduct - 1] &= 0x3FFFFF;
+               break;
+            }
+            if (half == 2) {
+               z = 1.0 - z;
+               if (carry != 0) z -= b2Math.PowerOfTwo(scale);
+            }
+         }
+         if (z != 0.0) break;
+         j = 0;
+         for (i = lastProduct - 1;
+         i >= k_initialTerms; --i) {
+            j |= productChunks[i];
+         }
+         if (j != 0) break;
+         k = 1;
+         while (productChunks[k_initialTerms - k] == 0) {
+            ++k;
+         }
+         for (i = lastProduct + 1;
+         i <= lastProduct + k; ++i) {
+            terms[lastChunk + i] = k_twoOverPi[tableStart + i];
+            sum = 0.0;
+            for (j = 0;
+            j <= lastChunk; ++j) {
+               sum += chunks[j] * terms[lastChunk + i - j];
+            }
+            products[i] = sum;
+         }
+         lastProduct += k;
+      }
+      if (z == 0.0) {
+         lastProduct -= 1;
+         scale -= 24;
+         while (productChunks[lastProduct] == 0) {
+            lastProduct -= 1;
+            scale -= 24;
+         }
+      }
+      else {
+         z *= b2Math.PowerOfTwo((-scale));
+         if (z >= k_two24) {
+            high = Math.floor(k_twoNegative24 * z);
+            productChunks[lastProduct] = Math.floor(z - k_two24 * high);
+            lastProduct += 1;
+            scale += 24;
+            productChunks[lastProduct] = high;
+         }
+         else {
+            productChunks[lastProduct] = Math.floor(z);
+         }
+      }
+      power = b2Math.PowerOfTwo(scale);
+      for (i = lastProduct;
+      i >= 0; --i) {
+         products[i] = power * productChunks[i];
+         power *= k_twoNegative24;
+      }
+      for (i = lastProduct;
+      i >= 0; --i) {
+         sum = 0.0;
+         for (k = 0;
+         k <= k_initialTerms && k <= lastProduct - i; ++k) {
+            sum += k_pio2[k] * products[i + k];
+         }
+         piProducts[lastProduct - i] = sum;
+      }
+      sum = 0.0;
+      for (i = lastProduct;
+      i >= 0; --i) {
+         sum += piProducts[i];
+      }
+      reduction[0] = half == 0 ? sum : (-sum);
+      sum = piProducts[0] - sum;
+      for (i = 1;
+      i <= lastProduct; ++i) {
+         sum += piProducts[i];
+      }
+      reduction[1] = half == 0 ? sum : (-sum);
+      return n & 7;
    }
    b2Math.SinKernel = function (x, tail, hasTail) {
       if (x === undefined) x = 0;
@@ -4172,11 +4413,11 @@ Box2D.postDefs = [];
       var k_piLow = 1.2246467991473532e-16;
       if (isNaN(x) || isNaN(y)) return x + y;
       if (x == 1.0) return b2Math.Atan(y);
-      var hx = b2Math.HighWord(x);
-      var hy = b2Math.HighWord(y);
-      var m = ((hy >> 31) & 1) | ((hx >> 30) & 2);
+      var highX = b2Math.HighWord(x);
+      var highY = b2Math.HighWord(y);
+      var signs = ((highY >> 31) & 1) | ((highX >> 30) & 2);
       if (y == 0.0) {
-         switch (m) {
+         switch (signs) {
          case 0:
          case 1:
             return y;
@@ -4186,10 +4427,10 @@ Box2D.postDefs = [];
             return (-k_pi);
          }
       }
-      if (x == 0.0) return hy < 0 ? (-k_piOver2) : k_piOver2;
-      if (Math.abs(x) == Infinity) {
-         if (Math.abs(y) == Infinity) {
-            switch (m) {
+      if (x == 0.0) return highY < 0 ? (-k_piOver2) : k_piOver2;
+      if (!b2Math.IsValid(x)) {
+         if (!b2Math.IsValid(y)) {
+            switch (signs) {
             case 0:
                return k_piOver4;
             case 1:
@@ -4200,7 +4441,7 @@ Box2D.postDefs = [];
                return (-3.0 * k_piOver4);
             }
          }
-         switch (m) {
+         switch (signs) {
          case 0:
             return 0.0;
          case 1:
@@ -4211,79 +4452,79 @@ Box2D.postDefs = [];
             return (-k_pi);
          }
       }
-      if (Math.abs(y) == Infinity) return hy < 0 ? (-k_piOver2) : k_piOver2;
-      var k = ((hy & 0x7FFFFFFF) - (hx & 0x7FFFFFFF)) >> 20;
-      var z;
-      if (k > 60) {
-         z = k_piOver2 + 0.5 * k_piLow;
-         m &= 1;
+      if (!b2Math.IsValid(y)) return highY < 0 ? (-k_piOver2) : k_piOver2;
+      var exponentDifference = ((highY & 0x7FFFFFFF) - (highX & 0x7FFFFFFF)) >> 20;
+      var angle;
+      if (exponentDifference > 60) {
+         angle = k_piOver2 + 0.5 * k_piLow;
+         signs &= 1;
       }
-      else if (hx < 0 && k < -60) {
-         z = 0.0;
+      else if (highX < 0 && exponentDifference < -60) {
+         angle = 0.0;
       }
       else {
-         z = b2Math.Atan(Math.abs(y / x));
+         angle = b2Math.Atan(Math.abs(y / x));
       }
-      switch (m) {
+      switch (signs) {
       case 0:
-         return z;
+         return angle;
       case 1:
-         return (-z);
+         return (-angle);
       case 2:
-         return k_pi - (z - k_piLow);
+         return k_pi - (angle - k_piLow);
       default:
-         return (z - k_piLow) - k_pi;
+         return (angle - k_piLow) - k_pi;
       }
    }
    b2Math.Atan = function (x) {
       if (x === undefined) x = 0;
       var k_atanHigh = [0.4636476090008061, 0.7853981633974483, 0.982793723247329, 1.5707963267948966];
       var k_atanLow = [2.2698777452961687e-17, 3.061616997868383e-17, 1.3903311031230998e-17, 6.123233995736766e-17];
-      var k_atan0 = 0.3333333333333293;
-      var k_atan1 = (-0.19999999999876483);
-      var k_atan2 = 0.14285714272503466;
-      var k_atan3 = (-0.11111110405462356);
-      var k_atan4 = 0.09090887133436507;
-      var k_atan5 = (-0.0769187620504483);
-      var k_atan6 = 0.06661073137387531;
-      var k_atan7 = (-0.058335701337905735);
-      var k_atan8 = 0.049768779946159324;
-      var k_atan9 = (-0.036531572744216916);
-      var k_atan10 = 0.016285820115365782;
+      var k_atan1 = 0.3333333333333293;
+      var k_atan2 = (-0.19999999999876483);
+      var k_atan3 = 0.14285714272503466;
+      var k_atan4 = (-0.11111110405462356);
+      var k_atan5 = 0.09090887133436507;
+      var k_atan6 = (-0.0769187620504483);
+      var k_atan7 = 0.06661073137387531;
+      var k_atan8 = (-0.058335701337905735);
+      var k_atan9 = 0.049768779946159324;
+      var k_atan10 = (-0.036531572744216916);
+      var k_atan11 = 0.016285820115365782;
       if (isNaN(x)) return x + x;
       var negative = x < 0.0;
-      var id = (-1);
+      var range = (-1);
       if (Math.abs(x) >= 73786976294838210000) return negative ? (-k_atanHigh[3] - k_atanLow[3]) : k_atanHigh[3] + k_atanLow[3];
       if (Math.abs(x) < 7.450580596923828e-9) return x;
       if (Math.abs(x) >= 0.4375) {
          x = Math.abs(x);
          if (x < 1.1875) {
             if (x < 0.6875) {
-               id = 0;
+               range = 0;
                x = (2.0 * x - 1.0) / (2.0 + x);
             }
             else {
-               id = 1;
+               range = 1;
                x = (x - 1.0) / (x + 1.0);
             }
          }
          else {
             if (x < 2.4375) {
-               id = 2;
+               range = 2;
                x = (x - 1.5) / (1.0 + 1.5 * x);
             }
             else {
-               id = 3;
+               range = 3;
                x = (-1.0) / x;
             }
          }
       }
       var z = x * x;
       var w = z * z;
-      var s1 = z * (k_atan0 + w * (k_atan2 + w * (k_atan4 + w * (k_atan6 + w * (k_atan8 + w * k_atan10)))));
-      var s2 = w * (k_atan1 + w * (k_atan3 + w * (k_atan5 + w * (k_atan7 + w * k_atan9))));
-      if (id < 0) return x - x * (s1 + s2);
-      z = k_atanHigh[id] - ((x * (s1 + s2) - k_atanLow[id]) - x);
+      var s1 = z * (k_atan1 + w * (k_atan3 + w * (k_atan5 + w * (k_atan7 + w * (k_atan9 + w * k_atan11)))));
+      var s2 = w * (k_atan2 + w * (k_atan4 + w * (k_atan6 + w * (k_atan8 + w * k_atan10))));
+      if (range < 0) return x - x * (s1 + s2);
+      z = k_atanHigh[range] - ((x * (s1 + s2) - k_atanLow[range]) - x);
       return negative ? (-z) : z;
    }
    b2Math.HighWord = function (x) {
@@ -4291,6 +4532,13 @@ Box2D.postDefs = [];
       var dataView = b2Math.s_dataView;
       dataView.setFloat64(0, x);
       return dataView.getInt32(0);
+   }
+   b2Math.PowerOfTwo = function (exponent) {
+      if (exponent === undefined) exponent = 0;
+      var dataView = b2Math.s_dataView;
+      dataView.setInt32(0, (exponent + 1023) << 20);
+      dataView.setInt32(4, 0);
+      return dataView.getFloat64(0);
    }
    Box2D.postDefs.push(function () {
       Box2D.Common.Math.b2Math.b2Vec2_zero = new b2Vec2(0.0, 0.0);
