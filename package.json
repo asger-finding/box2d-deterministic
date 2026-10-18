@@ -1,7 +1,7 @@
 {
   "name": "@asger-finding/box2d-v2",
   "version": "2.1.0",
-  "description": "Box2DWeb 2.1a.3 as an ES module, with its port bugs fixed for deterministic simulation.",
+  "description": "Box2DWeb 2.1 ported to an ES module that simulates deterministically in all JavaScript engines.",
   "type": "module",
   "exports": {
     ".": "./box2d.js"
@@ -9,8 +9,10 @@
   "files": [
     "box2d.js"
   ],
+  "sideEffects": false,
   "scripts": {
-    "test": "node --test"
+    "lint": "eslint --flag unstable_native_nodejs_ts_config .",
+    "test": "tsc && node --test \"test/*.test.ts\""
   },
   "repository": {
     "type": "git",
@@ -31,5 +33,12 @@
   "bugs": {
     "url": "https://github.com/asger-finding/Box2D-v2/issues"
   },
-  "homepage": "https://github.com/asger-finding/Box2D-v2#readme"
+  "homepage": "https://github.com/asger-finding/Box2D-v2#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.12.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2"
+  }
 }
