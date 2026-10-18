@@ -760,6 +760,7 @@ Box2D.postDefs = [];
             if (tmin > tmax) return false;
          }
       }
+      if (tmin < 0.0 || input.maxFraction < tmin) return false;
       output.fraction = tmin;
       return true;
    }
@@ -1591,7 +1592,7 @@ Box2D.postDefs = [];
             if (subInput == null) subInput = new b2RayCastInput();
             subInput.p1 = input.p1;
             subInput.p2 = input.p2;
-            subInput.maxFraction = input.maxFraction;
+            subInput.maxFraction = maxFraction;
             maxFraction = callback(subInput, node);
             if (maxFraction == 0.0) break;
             if (maxFraction > 0.0) {
@@ -1819,7 +1820,7 @@ Box2D.postDefs = [];
    }
    b2DynamicTreeBroadPhase.prototype.UnBufferMove = function (proxy) {
       var i = this.m_moveBuffer.indexOf(proxy);
-      this.m_moveBuffer.splice(i, 1);
+      if (i >= 0) this.m_moveBuffer.splice(i, 1);
    }
    b2DynamicTreeBroadPhase.prototype.ComparePairs = function (pair1, pair2) {
       return 0;
@@ -3242,7 +3243,7 @@ Box2D.postDefs = [];
       this.m_normals[1].Set(1.0, 0.0);
       this.m_normals[2].Set(0.0, 1.0);
       this.m_normals[3].Set((-1.0), 0.0);
-      this.m_centroid = center;
+      this.m_centroid.SetV(center);
       var xf = new b2Transform();
       xf.position = center;
       xf.R.Set(angle);
@@ -3337,7 +3338,7 @@ Box2D.postDefs = [];
                upper = numerator / denominator;
             }
          }
-         if (upper < lower - b2Settings.b2_epsilon) {
+         if (upper < lower) {
             return false;
          }
       }
@@ -3529,6 +3530,7 @@ Box2D.postDefs = [];
    b2PolygonShape.prototype.b2PolygonShape = function () {
       this.__super.b2Shape.call(this);
       this.m_type = b2Shape.e_polygonShape;
+      this.m_radius = b2Settings.b2_polygonRadius;
       this.m_centroid = new b2Vec2();
       this.m_vertices = new Vector();
       this.m_normals = new Vector();
@@ -8592,8 +8594,14 @@ Box2D.postDefs = [];
       var dX = bB.m_sweep.c.x + r2X - bA.m_sweep.c.x - r1X;
       var dY = bB.m_sweep.c.y + r2Y - bA.m_sweep.c.y - r1Y;
       var length = Math.sqrt(dX * dX + dY * dY);
-      dX /= length;
-      dY /= length;
+      if (length < b2Settings.b2_epsilon) {
+         length = 0.0;
+      }
+      else {
+         var invLength = 1.0 / length;
+         dX *= invLength;
+         dY *= invLength;
+      }
       var C = length - this.m_length;
       C = b2Math.Clamp(C, (-b2Settings.b2_maxLinearCorrection), b2Settings.b2_maxLinearCorrection);
       var impulse = (-this.m_mass * C);
@@ -8847,8 +8855,8 @@ Box2D.postDefs = [];
    b2GearJoint.prototype.GetReactionTorque = function (inv_dt) {
       if (inv_dt === undefined) inv_dt = 0;
       var tMat = this.m_bodyB.m_xf.R;
-      var rX = this.m_localAnchor1.x - this.m_bodyB.m_sweep.localCenter.x;
-      var rY = this.m_localAnchor1.y - this.m_bodyB.m_sweep.localCenter.y;
+      var rX = this.m_localAnchor2.x - this.m_bodyB.m_sweep.localCenter.x;
+      var rY = this.m_localAnchor2.y - this.m_bodyB.m_sweep.localCenter.y;
       var tX = tMat.col1.x * rX + tMat.col2.x * rY;
       rY = tMat.col1.y * rX + tMat.col2.y * rY;
       rX = tX;
@@ -9218,7 +9226,7 @@ Box2D.postDefs = [];
    }
    b2LineJoint.prototype.GetReactionTorque = function (inv_dt) {
       if (inv_dt === undefined) inv_dt = 0;
-      return inv_dt * this.m_impulse.y;
+      return 0.0;
    }
    b2LineJoint.prototype.GetJointTranslation = function () {
       var bA = this.m_bodyA;
@@ -9584,7 +9592,7 @@ Box2D.postDefs = [];
             active = true;
          }
          else if (translation >= this.m_upperTranslation) {
-            C2 = b2Math.Clamp(translation - this.m_upperTranslation + b2Settings.b2_linearSlop, 0.0, b2Settings.b2_maxLinearCorrection);
+            C2 = b2Math.Clamp(translation - this.m_upperTranslation - b2Settings.b2_linearSlop, 0.0, b2Settings.b2_maxLinearCorrection);
             linearError = translation - this.m_upperTranslation;
             active = true;
          }
@@ -9700,7 +9708,7 @@ Box2D.postDefs = [];
       if (this.m_bodyB.IsAwake() == false) {
          this.m_bodyB.SetAwake(true);
       }
-      this.m_target = target;
+      this.m_target.SetV(target);
    }
    b2MouseJoint.prototype.GetMaxForce = function () {
       return this.m_maxForce;
@@ -10049,6 +10057,7 @@ Box2D.postDefs = [];
       }
       else {
          this.m_limitState = b2Joint.e_inactiveLimit;
+         this.m_impulse.z = 0.0;
       }
       if (this.m_enableMotor == false) {
          this.m_motorImpulse = 0.0;
@@ -10056,6 +10065,7 @@ Box2D.postDefs = [];
       if (step.warmStarting) {
          this.m_impulse.x *= step.dtRatio;
          this.m_impulse.y *= step.dtRatio;
+         this.m_impulse.z *= step.dtRatio;
          this.m_motorImpulse *= step.dtRatio;
          var PX = this.m_impulse.x * this.m_perp.x + (this.m_motorImpulse + this.m_impulse.z) * this.m_axis.x;
          var PY = this.m_impulse.x * this.m_perp.y + (this.m_motorImpulse + this.m_impulse.z) * this.m_axis.y;
@@ -10214,7 +10224,7 @@ Box2D.postDefs = [];
             active = true;
          }
          else if (translation >= this.m_upperTranslation) {
-            C2 = b2Math.Clamp(translation - this.m_upperTranslation + b2Settings.b2_linearSlop, 0.0, b2Settings.b2_maxLinearCorrection);
+            C2 = b2Math.Clamp(translation - this.m_upperTranslation - b2Settings.b2_linearSlop, 0.0, b2Settings.b2_maxLinearCorrection);
             linearError = translation - this.m_upperTranslation;
             active = true;
          }
@@ -10759,6 +10769,8 @@ Box2D.postDefs = [];
       return this.m_enableLimit;
    }
    b2RevoluteJoint.prototype.EnableLimit = function (flag) {
+      this.m_bodyA.SetAwake(true);
+      this.m_bodyB.SetAwake(true);
       this.m_enableLimit = flag;
    }
    b2RevoluteJoint.prototype.GetLowerLimit = function () {
@@ -10770,15 +10782,17 @@ Box2D.postDefs = [];
    b2RevoluteJoint.prototype.SetLimits = function (lower, upper) {
       if (lower === undefined) lower = 0;
       if (upper === undefined) upper = 0;
+      this.m_bodyA.SetAwake(true);
+      this.m_bodyB.SetAwake(true);
       this.m_lowerAngle = lower;
       this.m_upperAngle = upper;
    }
    b2RevoluteJoint.prototype.IsMotorEnabled = function () {
-      this.m_bodyA.SetAwake(true);
-      this.m_bodyB.SetAwake(true);
       return this.m_enableMotor;
    }
    b2RevoluteJoint.prototype.EnableMotor = function (flag) {
+      this.m_bodyA.SetAwake(true);
+      this.m_bodyB.SetAwake(true);
       this.m_enableMotor = flag;
    }
    b2RevoluteJoint.prototype.SetMotorSpeed = function (speed) {
@@ -10792,10 +10806,12 @@ Box2D.postDefs = [];
    }
    b2RevoluteJoint.prototype.SetMaxMotorTorque = function (torque) {
       if (torque === undefined) torque = 0;
+      this.m_bodyA.SetAwake(true);
+      this.m_bodyB.SetAwake(true);
       this.m_maxMotorTorque = torque;
    }
    b2RevoluteJoint.prototype.GetMotorTorque = function () {
-      return this.m_maxMotorTorque;
+      return this.m_motorImpulse;
    }
    b2RevoluteJoint.prototype.b2RevoluteJoint = function (def) {
       this.__super.b2Joint.call(this, def);
@@ -10843,7 +10859,10 @@ Box2D.postDefs = [];
       this.m_mass.col1.z = this.m_mass.col3.x;
       this.m_mass.col2.z = this.m_mass.col3.y;
       this.m_mass.col3.z = i1 + i2;
-      this.m_motorMass = 1.0 / (i1 + i2);
+      this.m_motorMass = i1 + i2;
+      if (this.m_motorMass > 0.0) {
+         this.m_motorMass = 1.0 / this.m_motorMass;
+      }
       if (this.m_enableMotor == false) {
          this.m_motorImpulse = 0.0;
       }
@@ -10875,6 +10894,7 @@ Box2D.postDefs = [];
       if (step.warmStarting) {
          this.m_impulse.x *= step.dtRatio;
          this.m_impulse.y *= step.dtRatio;
+         this.m_impulse.z *= step.dtRatio;
          this.m_motorImpulse *= step.dtRatio;
          var PX = this.m_impulse.x;
          var PY = this.m_impulse.y;
