@@ -5804,6 +5804,7 @@ Box2D.postDefs = [];
       this.m_allowSleep = doSleep;
       this.m_gravity = gravity;
       this.m_inv_dt0 = 0.0;
+      this.m_stepRemainder = 0.0;
       this.m_contactManager.m_world = this;
       var bd = new b2BodyDef();
       this.m_groundBody = this.CreateBody(bd);
@@ -6067,6 +6068,26 @@ Box2D.postDefs = [];
          this.m_inv_dt0 = step.inv_dt;
       }
       this.m_flags &= ~b2World.e_locked;
+   }
+   b2World.prototype.StepFixed = function (dt, timeStep, velocityIterations, positionIterations) {
+      if (dt === undefined) dt = 0;
+      if (timeStep === undefined) timeStep = 0;
+      if (velocityIterations === undefined) velocityIterations = 0;
+      if (positionIterations === undefined) positionIterations = 0;
+      b2Settings.b2Assert(timeStep > 0.0);
+      var stepCount = 0;
+      if (dt > 0.0) {
+         this.m_stepRemainder += dt;
+      }
+      while (this.m_stepRemainder >= timeStep) {
+         this.Step(timeStep, velocityIterations, positionIterations);
+         this.m_stepRemainder -= timeStep;
+         ++stepCount;
+      }
+      return stepCount;
+   }
+   b2World.prototype.GetStepRemainder = function () {
+      return this.m_stepRemainder;
    }
    b2World.prototype.ClearForces = function () {
       for (var body = this.m_bodyList; body; body = body.m_next) {
