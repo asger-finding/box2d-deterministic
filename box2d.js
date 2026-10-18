@@ -3778,7 +3778,7 @@ Box2D.postDefs = [];
       this.col2.y = 0.0;
    }
    b2Mat22.prototype.GetAngle = function () {
-      return Math.atan2(this.col1.y, this.col1.x);
+      return b2Math.Atan2(this.col1.y, this.col1.x);
    }
    b2Mat22.prototype.GetInverse = function (out) {
       var a = this.col1.x;
@@ -4065,7 +4065,7 @@ Box2D.postDefs = [];
       return result;
    }
    /*
-   * JavaScript ports of fdlibm's sin and cos to secure browser engine parity.
+   * JavaScript ports of fdlibm's sin, cos and atan2 to secure browser engine parity.
    *
    * ====================================================
    * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -4163,11 +4163,141 @@ Box2D.postDefs = [];
       w = 1.0 - hz;
       return w + (((1.0 - w) - hz) + (z * r - x * tail));
    }
+   b2Math.Atan2 = function (y, x) {
+      if (y === undefined) y = 0;
+      if (x === undefined) x = 0;
+      var k_pi = 3.141592653589793;
+      var k_piOver2 = 1.5707963267948966;
+      var k_piOver4 = 0.7853981633974483;
+      var k_piLow = 1.2246467991473532e-16;
+      if (isNaN(x) || isNaN(y)) return x + y;
+      if (x == 1.0) return b2Math.Atan(y);
+      var hx = b2Math.HighWord(x);
+      var hy = b2Math.HighWord(y);
+      var m = ((hy >> 31) & 1) | ((hx >> 30) & 2);
+      if (y == 0.0) {
+         switch (m) {
+         case 0:
+         case 1:
+            return y;
+         case 2:
+            return k_pi;
+         default:
+            return (-k_pi);
+         }
+      }
+      if (x == 0.0) return hy < 0 ? (-k_piOver2) : k_piOver2;
+      if (Math.abs(x) == Infinity) {
+         if (Math.abs(y) == Infinity) {
+            switch (m) {
+            case 0:
+               return k_piOver4;
+            case 1:
+               return (-k_piOver4);
+            case 2:
+               return 3.0 * k_piOver4;
+            default:
+               return (-3.0 * k_piOver4);
+            }
+         }
+         switch (m) {
+         case 0:
+            return 0.0;
+         case 1:
+            return (-0.0);
+         case 2:
+            return k_pi;
+         default:
+            return (-k_pi);
+         }
+      }
+      if (Math.abs(y) == Infinity) return hy < 0 ? (-k_piOver2) : k_piOver2;
+      var k = ((hy & 0x7FFFFFFF) - (hx & 0x7FFFFFFF)) >> 20;
+      var z;
+      if (k > 60) {
+         z = k_piOver2 + 0.5 * k_piLow;
+         m &= 1;
+      }
+      else if (hx < 0 && k < -60) {
+         z = 0.0;
+      }
+      else {
+         z = b2Math.Atan(Math.abs(y / x));
+      }
+      switch (m) {
+      case 0:
+         return z;
+      case 1:
+         return (-z);
+      case 2:
+         return k_pi - (z - k_piLow);
+      default:
+         return (z - k_piLow) - k_pi;
+      }
+   }
+   b2Math.Atan = function (x) {
+      if (x === undefined) x = 0;
+      var k_atanHigh = [0.4636476090008061, 0.7853981633974483, 0.982793723247329, 1.5707963267948966];
+      var k_atanLow = [2.2698777452961687e-17, 3.061616997868383e-17, 1.3903311031230998e-17, 6.123233995736766e-17];
+      var k_atan0 = 0.3333333333333293;
+      var k_atan1 = (-0.19999999999876483);
+      var k_atan2 = 0.14285714272503466;
+      var k_atan3 = (-0.11111110405462356);
+      var k_atan4 = 0.09090887133436507;
+      var k_atan5 = (-0.0769187620504483);
+      var k_atan6 = 0.06661073137387531;
+      var k_atan7 = (-0.058335701337905735);
+      var k_atan8 = 0.049768779946159324;
+      var k_atan9 = (-0.036531572744216916);
+      var k_atan10 = 0.016285820115365782;
+      if (isNaN(x)) return x + x;
+      var negative = x < 0.0;
+      var id = (-1);
+      if (Math.abs(x) >= 73786976294838210000) return negative ? (-k_atanHigh[3] - k_atanLow[3]) : k_atanHigh[3] + k_atanLow[3];
+      if (Math.abs(x) < 7.450580596923828e-9) return x;
+      if (Math.abs(x) >= 0.4375) {
+         x = Math.abs(x);
+         if (x < 1.1875) {
+            if (x < 0.6875) {
+               id = 0;
+               x = (2.0 * x - 1.0) / (2.0 + x);
+            }
+            else {
+               id = 1;
+               x = (x - 1.0) / (x + 1.0);
+            }
+         }
+         else {
+            if (x < 2.4375) {
+               id = 2;
+               x = (x - 1.5) / (1.0 + 1.5 * x);
+            }
+            else {
+               id = 3;
+               x = (-1.0) / x;
+            }
+         }
+      }
+      var z = x * x;
+      var w = z * z;
+      var s1 = z * (k_atan0 + w * (k_atan2 + w * (k_atan4 + w * (k_atan6 + w * (k_atan8 + w * k_atan10)))));
+      var s2 = w * (k_atan1 + w * (k_atan3 + w * (k_atan5 + w * (k_atan7 + w * k_atan9))));
+      if (id < 0) return x - x * (s1 + s2);
+      z = k_atanHigh[id] - ((x * (s1 + s2) - k_atanLow[id]) - x);
+      return negative ? (-z) : z;
+   }
+   b2Math.HighWord = function (x) {
+      if (x === undefined) x = 0;
+      var dataView = b2Math.s_dataView;
+      dataView.setFloat64(0, x);
+      return dataView.getInt32(0);
+   }
    Box2D.postDefs.push(function () {
       Box2D.Common.Math.b2Math.b2Vec2_zero = new b2Vec2(0.0, 0.0);
       Box2D.Common.Math.b2Math.b2Mat22_identity = b2Mat22.FromVV(new b2Vec2(1.0, 0.0), new b2Vec2(0.0, 1.0));
       Box2D.Common.Math.b2Math.b2Transform_identity = new b2Transform(b2Math.b2Vec2_zero, b2Math.b2Mat22_identity);
       Box2D.Common.Math.b2Math.s_reduction = [0.0, 0.0];
+      Box2D.Common.Math.b2Math.s_dataView = new DataView(new ArrayBuffer(8));
    });
    b2Sweep.b2Sweep = function () {
       this.localCenter = new b2Vec2();
@@ -4237,7 +4367,7 @@ Box2D.postDefs = [];
       this.R.SetM(x.R);
    }
    b2Transform.prototype.GetAngle = function () {
-      return Math.atan2(this.R.col1.y, this.R.col1.x);
+      return b2Math.Atan2(this.R.col1.y, this.R.col1.x);
    }
    b2Vec2.b2Vec2 = function () {};
    b2Vec2.prototype.b2Vec2 = function (x_, y_) {
