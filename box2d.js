@@ -6076,7 +6076,7 @@ Box2D.postDefs = [];
       if (positionIterations === undefined) positionIterations = 0;
       b2Settings.b2Assert(timeStep > 0.0);
       var stepCount = 0;
-      if (dt > 0.0) {
+      if (dt > 0.0 && b2Math.IsValid(dt)) {
          this.m_stepRemainder += dt;
       }
       while (this.m_stepRemainder >= timeStep) {
