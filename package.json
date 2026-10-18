@@ -1,5 +1,5 @@
 {
-  "name": "@asger-finding/box2d-v2",
+  "name": "box2d-deterministic",
   "version": "2.1.0",
   "description": "Box2DWeb 2.1 ported to an ES module that simulates deterministically in all JavaScript engines.",
   "type": "module",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/asger-finding/Box2D-v2.git"
+    "url": "git+https://github.com/asger-finding/box2d-deterministic.git"
   },
   "keywords": [
     "box2d",
@@ -31,9 +31,9 @@
   ],
   "license": "Zlib",
   "bugs": {
-    "url": "https://github.com/asger-finding/Box2D-v2/issues"
+    "url": "https://github.com/asger-finding/box2d-deterministic/issues"
   },
-  "homepage": "https://github.com/asger-finding/Box2D-v2#readme",
+  "homepage": "https://github.com/asger-finding/box2d-deterministic#readme",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.5",
