@@ -5799,8 +5799,8 @@ Box2D.postDefs = [];
       this.m_contactCount = 0;
       this.m_jointCount = 0;
       this.m_controllerCount = 0;
-      b2World.m_warmStarting = true;
-      b2World.m_continuousPhysics = true;
+      this.m_warmStarting = true;
+      this.m_continuousPhysics = true;
       this.m_allowSleep = doSleep;
       this.m_gravity = gravity;
       this.m_inv_dt0 = 0.0;
@@ -6012,10 +6012,10 @@ Box2D.postDefs = [];
       --this.m_controllerCount;
    }
    b2World.prototype.SetWarmStarting = function (flag) {
-      b2World.m_warmStarting = flag;
+      this.m_warmStarting = flag;
    }
    b2World.prototype.SetContinuousPhysics = function (flag) {
-      b2World.m_continuousPhysics = flag;
+      this.m_continuousPhysics = flag;
    }
    b2World.prototype.GetBodyCount = function () {
       return this.m_bodyCount;
@@ -6055,12 +6055,12 @@ Box2D.postDefs = [];
          step.inv_dt = 0.0;
       }
       step.dtRatio = this.m_inv_dt0 * dt;
-      step.warmStarting = b2World.m_warmStarting;
+      step.warmStarting = this.m_warmStarting;
       this.m_contactManager.Collide();
       if (step.dt > 0.0) {
          this.Solve(step);
       }
-      if (b2World.m_continuousPhysics && step.dt > 0.0) {
+      if (this.m_continuousPhysics && step.dt > 0.0) {
          this.SolveTOI(step);
       }
       if (step.dt > 0.0) {
