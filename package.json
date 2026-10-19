@@ -1,6 +1,6 @@
 {
   "name": "box2d-deterministic",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Box2DWeb 2.1 ported to an ES module that simulates deterministically in all JavaScript engines.",
   "type": "module",
   "exports": {
