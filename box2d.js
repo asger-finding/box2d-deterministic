@@ -2723,33 +2723,7 @@ const b2SeparationFunction = class {
       this.m_axis.x = pointBX - pointAX;
       this.m_axis.y = pointBY - pointAY;
       this.m_axis.Normalize();
-    } else if (cache.indexB[0] == cache.indexB[1]) {
-      this.m_type = b2SeparationFunction.e_faceA;
-      localPointA1 = this.m_proxyA.GetVertex(cache.indexA[0]);
-      localPointA2 = this.m_proxyA.GetVertex(cache.indexA[1]);
-      localPointB = this.m_proxyB.GetVertex(cache.indexB[0]);
-      this.m_localPoint.x = 0.5 * (localPointA1.x + localPointA2.x);
-      this.m_localPoint.y = 0.5 * (localPointA1.y + localPointA2.y);
-      this.m_axis.x = 1.0 * (localPointA2.y - localPointA1.y);
-      this.m_axis.y = -1.0 * (localPointA2.x - localPointA1.x);
-      this.m_axis.Normalize();
-      tVec = this.m_axis;
-      tMat = transformA.R;
-      normalX = tMat.col1.x * tVec.x + tMat.col2.x * tVec.y;
-      normalY = tMat.col1.y * tVec.x + tMat.col2.y * tVec.y;
-      tVec = this.m_localPoint;
-      tMat = transformA.R;
-      pointAX = transformA.position.x + (tMat.col1.x * tVec.x + tMat.col2.x * tVec.y);
-      pointAY = transformA.position.y + (tMat.col1.y * tVec.x + tMat.col2.y * tVec.y);
-      tVec = localPointB;
-      tMat = transformB.R;
-      pointBX = transformB.position.x + (tMat.col1.x * tVec.x + tMat.col2.x * tVec.y);
-      pointBY = transformB.position.y + (tMat.col1.y * tVec.x + tMat.col2.y * tVec.y);
-      s = (pointBX - pointAX) * normalX + (pointBY - pointAY) * normalY;
-      if (s < 0.0) {
-        this.m_axis.NegativeSelf();
-      }
-    } else if (cache.indexA[0] == cache.indexA[0]) {
+    } else if (cache.indexA[0] == cache.indexA[1]) {
       this.m_type = b2SeparationFunction.e_faceB;
       localPointB1 = this.m_proxyB.GetVertex(cache.indexB[0]);
       localPointB2 = this.m_proxyB.GetVertex(cache.indexB[1]);
@@ -2776,51 +2750,34 @@ const b2SeparationFunction = class {
         this.m_axis.NegativeSelf();
       }
     } else {
+      this.m_type = b2SeparationFunction.e_faceA;
       localPointA1 = this.m_proxyA.GetVertex(cache.indexA[0]);
       localPointA2 = this.m_proxyA.GetVertex(cache.indexA[1]);
-      localPointB1 = this.m_proxyB.GetVertex(cache.indexB[0]);
-      localPointB2 = this.m_proxyB.GetVertex(cache.indexB[1]);
-      const dA = b2Math.MulMV(transformA.R, b2Math.SubtractVV(localPointA2, localPointA1));
-      const dB = b2Math.MulMV(transformB.R, b2Math.SubtractVV(localPointB2, localPointB1));
-      const a = dA.x * dA.x + dA.y * dA.y;
-      const e = dB.x * dB.x + dB.y * dB.y;
-      const r = b2Math.SubtractVV(dB, dA);
-      const c = dA.x * r.x + dA.y * r.y;
-      const f = dB.x * r.x + dB.y * r.y;
-      const b = dA.x * dB.x + dA.y * dB.y;
-      const denom = a * e - b * b;
-      s = 0.0;
-      if (denom != 0.0) {
-        s = b2Math.Clamp((b * f - c * e) / denom, 0.0, 1.0);
-      }
-      const t = (b * s + f) / e;
-      if (t < 0.0) {
-        s = b2Math.Clamp((b - c) / a, 0.0, 1.0);
-      }
-      localPointA = new b2Vec2();
-      localPointA.x = localPointA1.x + s * (localPointA2.x - localPointA1.x);
-      localPointA.y = localPointA1.y + s * (localPointA2.y - localPointA1.y);
-      localPointB = new b2Vec2();
-      localPointB.x = localPointB1.x + s * (localPointB2.x - localPointB1.x);
-      localPointB.y = localPointB1.y + s * (localPointB2.y - localPointB1.y);
-      if (s == 0.0 || s == 1.0) {
-        this.m_type = b2SeparationFunction.e_faceB;
-        this.m_axis = b2Math.CrossVF(b2Math.SubtractVV(localPointB2, localPointB1), 1.0);
-        this.m_axis.Normalize();
-        this.m_localPoint = localPointB;
-        if (s < 0.0) {
-          this.m_axis.NegativeSelf();
-        }
-      } else {
-        this.m_type = b2SeparationFunction.e_faceA;
-        this.m_axis = b2Math.CrossVF(b2Math.SubtractVV(localPointA2, localPointA1), 1.0);
-        this.m_localPoint = localPointA;
-        if (s < 0.0) {
-          this.m_axis.NegativeSelf();
-        }
+      localPointB = this.m_proxyB.GetVertex(cache.indexB[0]);
+      this.m_localPoint.x = 0.5 * (localPointA1.x + localPointA2.x);
+      this.m_localPoint.y = 0.5 * (localPointA1.y + localPointA2.y);
+      this.m_axis.x = 1.0 * (localPointA2.y - localPointA1.y);
+      this.m_axis.y = -1.0 * (localPointA2.x - localPointA1.x);
+      this.m_axis.Normalize();
+      tVec = this.m_axis;
+      tMat = transformA.R;
+      normalX = tMat.col1.x * tVec.x + tMat.col2.x * tVec.y;
+      normalY = tMat.col1.y * tVec.x + tMat.col2.y * tVec.y;
+      tVec = this.m_localPoint;
+      tMat = transformA.R;
+      pointAX = transformA.position.x + (tMat.col1.x * tVec.x + tMat.col2.x * tVec.y);
+      pointAY = transformA.position.y + (tMat.col1.y * tVec.x + tMat.col2.y * tVec.y);
+      tVec = localPointB;
+      tMat = transformB.R;
+      pointBX = transformB.position.x + (tMat.col1.x * tVec.x + tMat.col2.x * tVec.y);
+      pointBY = transformB.position.y + (tMat.col1.y * tVec.x + tMat.col2.y * tVec.y);
+      s = (pointBX - pointAX) * normalX + (pointBY - pointAY) * normalY;
+      if (s < 0.0) {
+        this.m_axis.NegativeSelf();
       }
     }
   }
+
   Evaluate(transformA, transformB) {
     const axis = b2SeparationFunction.s_axis;
     const axisX = this.m_axis.x;

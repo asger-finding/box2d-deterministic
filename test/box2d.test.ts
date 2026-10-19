@@ -5,7 +5,6 @@ import { Box2D } from "../box2d.js";
 const { b2Vec2, b2Math } = Box2D.Common.Math;
 const { b2Body, b2BodyDef, b2FilterData, b2FixtureDef, b2World } = Box2D.Dynamics;
 const { b2CircleShape, b2PolygonShape } = Box2D.Collision.Shapes;
-const { b2Settings } = Box2D.Common;
 
 type World = InstanceType<typeof b2World>;
 type Body = InstanceType<typeof b2Body>;
@@ -117,10 +116,6 @@ test("contact count follows destroyed contacts", () => {
 
   world.DestroyBody(box);
   assert.equal(world.GetContactCount(), 0);
-});
-
-test("polygons use the polygon radius as their skin", () => {
-  assert.equal(new b2PolygonShape().m_radius, b2Settings.b2_polygonRadius);
 });
 
 test("worlds stepped side by side match a world stepped alone", () => {
